@@ -15,7 +15,19 @@ class DAO {
         //////////////////////////////////////////////////////////////
         //							USER 							//
         //////////////////////////////////////////////////////////////
+        private function createUser($password,$pseudo,$groupe,$nom,$facebook,$tweeter,$email,$numeroTel) {
+        	$quser = "INSERT INTO user VALUES ('','$password','$pseudo','groupe','$nom','$facebook','$tweeter','$email','$numeroTel')";
+        	$qnbr = "SELECT max(id) FROM user";
+	        $ruser = $this->db->exec($quser);
+	        $rnbr = $this->db->query($qnbr);
+	        $nbr = $rnbr->fetch();
+	        if ($ruser == 0) {
+	        	return 0;
+	        } else {
+	        	return $nbr[0];
+	        }
 
+        }
 
         //////////////////////////////////////////////////////////////
         //							GROUPE 							//
@@ -58,15 +70,14 @@ class DAO {
         private function createGroupe(Groupe $g, $id) {
           if ($g != NULL) {
             try {
-              $nom = $g->nom();
               $nbPers = $g->nbPers();
               $style = $g->style();
-              $numG = $g->numeroTel();
-              $q = "INSERT INTO groupe VALUES ($id,'$nom','$nbPers','$style','$numG')";
+              $q = "INSERT INTO groupe VALUES ($id,'$nbPers','$style')";
               $r = $this->db->exec($q);
-              printf(" l %d l ",$r);
               if ($r == 0) {
-                die("createGroupe error: no group inserted\n");
+                return false; // Il y a un problème
+              } else {
+              	return true; // Tous s'est bien passé
               }
             } catch (PDOException $e) {
               die("PDO Error :".$e->getMessage());
@@ -82,18 +93,14 @@ class DAO {
         	try {
 	        	$g = new Groupe();
 	        	$quser = "INSERT INTO user VALUES ('','$password','$pseudo','groupe','$nom','$facebook','$tweeter','$email','$numeroTel')";
-	        	var_dump($quser);
-	        	$qnbr = "SELECT max(id) FROM user";
-	        	$ruser = $this->db->exec($quser);
+	        	$ruser = $this->createUser($password,$pseudo,'groupe',$nom,$facebook,$tweeter,$email,$numeroTel);
 	        	if ($ruser == 0) {
 	                die("newUserGroupe error: no user inserted\n");
 	            } else {
-	              	$rnbr = $this->db->query($qnbr);
-	              	$nbr = $rnbr->fetch();
-	              	$qgroupe = "INSERT INTO groupe VALUES ($nbr[0],$nbPers,'$style')";
-	              	$rgroupe = $this->db->exec($qgroupe);
-	              	if ($rgroupe == 0) {
-	              		$q = "TRUNCATE TABLE user";
+	              	$g->createGroupe($style,$nbPers);
+	              	if (!$this->createGroupe($g,$ruser)) {
+	              		$q = "DELETE user WHERE id=$ruser";
+	              		var_dump($q);
 	              		$this->db->exec($q);
 	                	die("newUserGroupe error: no groupe inserted\n");
 	              	}
@@ -113,6 +120,49 @@ class DAO {
         //							BOOKER 							//
         //////////////////////////////////////////////////////////////
 
+
+        //Créer dans la base de données le Groupe donné en paramètre
+        private function createBooker(Booker $b, $id) {
+          if ($g != NULL) {
+            try {
+              $prenom = $b->prenom();
+              $q = "INSERT INTO booker VALUES ($id,'$prenom')";
+              $r = $this->db->exec($q);
+              if ($r == 0) {
+                return false; // Il y a un problème
+              } else {
+              	return true; // Tous s'est bien passé
+              }
+            } catch (PDOException $e) {
+              die("PDO Error :".$e->getMessage());
+            }
+          }
+        }
+
+        function newUserBooker ($password,$pseudo,$nom,$facebook,$tweeter,$email,$numeroTel,$prenom) {
+        	require_once('Booker.class.php');
+        	if (!$password||!$pseudo||!$nom||!$email) {
+        		die("newUserBooker error: parameters missing\n");
+        	}
+        	try {
+	        	$b = new Booker();
+	        	$quser = "INSERT INTO user VALUES ('','$password','$pseudo','groupe','$nom','$facebook','$tweeter','$email','$numeroTel')";
+	        	$ruser = $this->createUser($password,$pseudo,'booker',$nom,$facebook,$tweeter,$email,$numeroTel);
+	        	if ($ruser == 0) {
+	                die("newUserBooker error: no user inserted\n");
+	            } else {
+	              	$b->createBooker($prenom);
+	              	if (!$this->createBooker($g,$ruser)) {
+	              		$q = "DELETE user WHERE id=$ruser";
+	              		var_dump($q);
+	              		$this->db->exec($q);
+	                	die("newUserBooker error: no booker inserted\n");
+	              	}
+	            }
+        	} catch (PDOException $e) {
+        		die("PDO Error :".$e->getMessage());
+        	}
+        }
         //////////////////////////////////////////////////////////////
         //							RESPLIEU						//
         //////////////////////////////////////////////////////////////
