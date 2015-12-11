@@ -1,5 +1,5 @@
 <?php 
-class booker {
+class resplieu {
         private $prenom;
 
         function __construct() {
@@ -10,7 +10,7 @@ class booker {
         }
 
 
-        function createBooker($prenom) {
+        function createResplieu($prenom) {
           $this->prenom = $prenom;
         }
 

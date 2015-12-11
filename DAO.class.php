@@ -116,6 +116,22 @@ class DAO {
         //							LIEU 							//
         //////////////////////////////////////////////////////////////
 
+        private function createLieu($id, $nom, $ville, $codePoste, $adresse, $lieudit, $nbPlace, $facebook, $tweeter) {
+          if (!$id || !$nom || !$ville || !$codePoste || !$adresse || !$nbPlace ) {
+            try {
+              $q = "INSERT INTO lieu VALUES ($id, '$nom', '$ville', $codePoste, '$adresse', '$lieudit', $nbPlace, '$facebook', '$tweeter')";
+              $r = $this->db->exec($q);
+              if (!$r) {
+                die("createLieu error : no lieu inserted");
+              } 
+            } catch (PDOException $e) {
+              die("PDO Error :".$e->getMessage());
+            }
+          } else {
+          	die("createLieu error : arguments missing");
+          }
+        } 
+
         //////////////////////////////////////////////////////////////
         //							BOOKER 							//
         //////////////////////////////////////////////////////////////
@@ -123,7 +139,7 @@ class DAO {
 
         //Créer dans la base de données le Groupe donné en paramètre
         private function createBooker(Booker $b, $id) {
-          if ($g != NULL) {
+          if ($b != NULL) {
             try {
               $prenom = $b->prenom();
               $q = "INSERT INTO booker VALUES ($id,'$prenom')";
@@ -152,9 +168,8 @@ class DAO {
 	                die("newUserBooker error: no user inserted\n");
 	            } else {
 	              	$b->createBooker($prenom);
-	              	if (!$this->createBooker($g,$ruser)) {
-	              		$q = "DELETE user WHERE id=$ruser";
-	              		var_dump($q);
+	              	if (!$this->createBooker($b,$ruser)) {
+	              		$q = "DELETE FROM user WHERE id=$ruser";
 	              		$this->db->exec($q);
 	                	die("newUserBooker error: no booker inserted\n");
 	              	}
@@ -166,8 +181,62 @@ class DAO {
         //////////////////////////////////////////////////////////////
         //							RESPLIEU						//
         //////////////////////////////////////////////////////////////
-       
+        private function createResplieu(Resplieu $r, $id) {
+          if ($r != NULL) {
+            try {
+              $prenom = $r->prenom();
+              $q = "INSERT INTO resplieu VALUES ($id,'$prenom')";
+              $r = $this->db->exec($q);
+              if ($r == 0) {
+                return false; // Il y a un problème
+              } else {
+              	return true; // Tous s'est bien passé
+              }
+            } catch (PDOException $e) {
+              die("PDO Error :".$e->getMessage());
+            }
+          }
+        }
 
+        function newUserResplieu ($password,$pseudo,$nom,$facebook,$tweeter,$email,$numeroTel,$prenom) {
+        	require_once('Resplieu.class.php');
+        	if (!$password||!$pseudo||!$nom||!$email) {
+        		die("newUserResplieu error: parameters missing\n");
+        	}
+        	try {
+	        	$r = new Resplieu();
+	        	$quser = "INSERT INTO user VALUES ('','$password','$pseudo','groupe','$nom','$facebook','$tweeter','$email','$numeroTel')";
+	        	$ruser = $this->createUser($password,$pseudo,'resplieu',$nom,$facebook,$tweeter,$email,$numeroTel);
+	        	if ($ruser == 0) {
+	                die("newUserResplieu error: no user inserted\n");
+	            } else {
+	              	$r->createResplieu($prenom);
+	              	if (!$this->createResplieu($r,$ruser)) {
+	              		$q = "DELETE FROM user WHERE id=$ruser";
+	              		$this->db->exec($q);
+	                	die("newUserResplieu error: no resplieu inserted\n");
+	              	}
+	            }
+        	} catch (PDOException $e) {
+        		die("PDO Error :".$e->getMessage());
+        	}
+        }    
+           
+        //////////////////////////////////////////////////////////////
+        //							JOUE							//
+        //////////////////////////////////////////////////////////////
+
+        //////////////////////////////////////////////////////////////
+        //						APPARTIENT							//
+        //////////////////////////////////////////////////////////////
+
+        //////////////////////////////////////////////////////////////
+        //							OUVRIR							//
+        //////////////////////////////////////////////////////////////
+
+        //////////////////////////////////////////////////////////////
+        //							SOCCUPE							//
+        //////////////////////////////////////////////////////////////
 }       
 
         ?>
