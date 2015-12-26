@@ -6,7 +6,14 @@ class DAO {
   // Ouverture de la base de donnée
   function __construct() {
   try {
-      $this->db = new PDO('mysql:host=sql2.olympe.in;dbname=2v5m01ch;charset=utf8', '2v5m01ch', 'banana:)', array(PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION));
+  		// IMPORTANT //
+  		// A CHANGER SI ON EST EN LOCAL OU PAS
+
+  		// LOCAL (Valentin)
+  		$this->db = new PDO('mysql:host=localhost;dbname=2v5m01ch;charset=utf8', 'root','');
+
+  		// SERVEUR
+      	//$this->db = new PDO('mysql:host=sql2.olympe.in;dbname=2v5m01ch;charset=utf8', '2v5m01ch', 'banana:)', array(PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION));
     } catch (PDOException $e) {
       exit("Erreur ouverture BD : ".$e->getMessage());
     }
@@ -28,6 +35,10 @@ class DAO {
   //////////////////////////////////////////////////////////////
   //							USER 						                          	//
   //////////////////////////////////////////////////////////////
+  /*
+	  Retourne l'id de l'user si il arrive a le créé
+	  Sinon retourne 0
+  */
   private function createUser($password,$pseudo,$type,$nom,$facebook,$tweeter,$email,$numeroTel) {
   	$quser = "INSERT INTO user VALUES ('','$password','$pseudo','$type','$nom','$facebook','$tweeter','$email','$numeroTel','0')";
   	$qnbr = "SELECT max(id) FROM user";
@@ -40,6 +51,100 @@ class DAO {
     	return $nbr[0];
     }
 
+  }
+  /*
+  	Supprime l'user possèdant cette id
+  	Renvois 1 si réussi
+  	Sinon renvois 0
+  */
+  	public function deleteUser($id) {
+  		if ($this->existe($id)) {
+  			// A FINIR
+  			// TROUVER LE TYPE, SUPRIMER DANS LE TYPE (BOOKER, GROUPE ..)
+
+  			$type = $this->db->query("SELECT type FROM user WHERE id=$id")->fetch(); // On récupère le type de l'user
+  			switch ($type) {
+  				case "booker":
+  					$this->deleteBooker($id);
+  					break;
+  				case "resplieu":
+  					$this->deleteResplieu($id);
+  					break;
+  				case "groupe":
+  					$this->deleteGroupe($id);
+  					break;
+  				default:
+  					die("erreur deleteUser __LINE__ : type de l'user non reconnu.");
+  					break; // innutile
+  			}
+
+
+	  		try {
+	      		$this->db->exec("DELETE FROM user WHERE id=$id");
+	   		} catch (PDOException $e) {
+	    	 	die("PDO Error :".$e->getMessage());
+	    	}
+
+
+    	}
+  	}
+
+  /*
+	Retourne l'id de l'user ayant le pseudo $pseudo
+	Sinon retourne 0
+  */
+  public function getIdFromPseudo($pseudo) {
+  	try {
+      $numid = $this->db->query("SELECT id FROM user WHERE pseudo=$pseudo")->fetch();
+      if ($result) {
+      	return $result[0];
+      } else {
+      	return 0;
+      }
+    } catch (PDOException $e) {
+      die("PDO Error :".$e->getMessage());
+    }
+  }
+
+
+  /*
+	Retourne 1 si l'id existe
+	Sinon retourne 0
+  */
+  public function existe($id) {
+  	$q = "SELECT * FROM user WHERE id=$id";
+  	
+  	try {
+      $result = $this->db->query($q)->fetch();
+      if ($result) {
+      	return 1;
+      } else {
+      	return 0;
+      }
+    } catch (PDOException $e) {
+      die("PDO Error :".$e->getMessage());
+    }
+
+  }
+
+
+  /*
+  	Retourne 1 si un user ayant ce pseudo et ce password existe
+  	Sinon retourne 0
+  */
+  public function connexion($pseudo,$password) {
+  	$q = "SELECT * FROM user WHERE pseudo='$pseudo' AND password='$password'";
+  	var_dump($q);
+  	try {
+      $result = $this->db->query($q);
+      if ($result) {
+      	return 1;
+      } else {
+      	return 0;
+      }
+    } catch (PDOException $e) {
+      die("PDO Error :".$e->getMessage());
+    }
   }
 
   //////////////////////////////////////////////////////////////
@@ -189,6 +294,11 @@ class DAO {
   		die("PDO Error :".$e->getMessage());
   	}
   }
+
+  private function deleteBooker($id) {
+  	$this->deleteSoccupeFromBooker($id);
+  	$this->db->exec("DELETE FROM booker WHERE userid=$id");
+  }
   //////////////////////////////////////////////////////////////
   //							RESPLIEU						                        //
   //////////////////////////////////////////////////////////////
@@ -247,5 +357,28 @@ class DAO {
   //////////////////////////////////////////////////////////////
   //							SOCCUPE							                        //
   //////////////////////////////////////////////////////////////
+  function createSoccupe($idgroupe, $idbook, $numcontrat) {
+  	try (
+  		if (!$this->db->query("SELECT * FROM soccupe where groupeuserid = $idgroupe AND bookeruserid = $idbook")->fetch()) { // Si la relation n'existe pas déjà
+  			if (!$this->db->query("SELECT * FROM groupe where userid = $idgroupe ")->fetch()) die("createSoccupe error __LINE__ : le groupe n'existe pas");
+  			if (!$this->db->query("SELECT * FROM booker where userid = $idbook ")->fetch()) die("createSoccupe error __LINE__ : le booker n'existe pas");
+  			$this->db->exec("INSERT INTO soccupe VALUES ($idgroupe, $idbook, $numcontrat)");
+  		} else {
+  			die("createSoccupe error __LINE__ : la relation existe déjà");
+  		}
+  	) catch (PDOException $e) {
+  		die("PDO Error :".$e->getMessage());
+  	}
+  	
+  }
+  function deleteSoccupeFromBooker($id) {
+  	try (
+  		$this->db->exec("DELETE FROM soccupe WHERE bookeruserid=$id");
+  	catch (PDOException $e) {
+  		die("PDO Error :".$e->getMessage());
+  	}
+  }
 }
+// TODO : FINIR DELETEUSER
 ?>
+
